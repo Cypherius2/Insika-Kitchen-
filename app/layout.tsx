@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
+import { Toaster } from 'sonner';
 import { FirebaseProvider } from '@/components/FirebaseProvider';
 
 const inter = Inter({
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning className="bg-[#fdfcf0] text-[#3d2b1f] font-sans antialiased">
         <FirebaseProvider>
           {children}
+          <Toaster position="top-right" richColors />
         </FirebaseProvider>
       </body>
     </html>

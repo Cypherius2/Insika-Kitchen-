@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Shell } from '@/components/Shell';
 import { useProducts } from '@/lib/hooks';
+import { toast } from 'sonner';
 import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
@@ -86,11 +87,13 @@ export default function ProductsPage() {
     try {
       if (editingProduct) {
         await updateDoc(doc(db, 'products', editingProduct.id), productData);
+        toast.success(`Product "${productData.name}" updated`);
       } else {
         await addDoc(collection(db, 'products'), {
           ...productData,
           createdAt: serverTimestamp(),
         });
+        toast.success(`Product "${productData.name}" created`);
       }
       setIsModalOpen(false);
     } catch (error) {
@@ -104,6 +107,7 @@ export default function ProductsPage() {
     if (!confirm('Are you sure you want to delete this product?')) return;
     try {
       await deleteDoc(doc(db, 'products', id));
+      toast.success('Product deleted');
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, 'products');
     }
@@ -139,8 +143,9 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-[#7a2b22]/10 bg-white shadow-sm">
-          <table className="w-full text-left">
+        <div className="overflow-x-auto rounded-2xl border border-[#7a2b22]/10 bg-white shadow-sm">
+          <div className="max-h-[60vh] overflow-y-auto no-scrollbar">
+            <table className="w-full text-left">
             <thead className="bg-[#fdfcf0]/50 text-xs font-bold uppercase tracking-wider text-[#3d2b1f]/40">
               <tr>
                 <th className="px-6 py-4">Product Info</th>
@@ -211,6 +216,7 @@ export default function ProductsPage() {
               <p>No products available. Add one to get started!</p>
             </div>
           )}
+          </div>
         </div>
       </div>
 
@@ -284,14 +290,14 @@ export default function ProductsPage() {
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-[#3d2b1f]/60">Product Image</label>
-                  <div className="flex flex-col items-center gap-4 rounded-xl border-2 border-dashed border-[#7a2b22]/10 bg-[#fdfcf0]/50 p-6 transition-all hover:border-[#7a2b22]/20">
+                  <div className="relative flex flex-col items-center gap-4 rounded-xl border-2 border-dashed border-[#7a2b22]/10 bg-[#fdfcf0]/50 p-6 transition-all hover:border-[#7a2b22]/20">
                     {formData.image ? (
                       <div className="group relative h-32 w-32 overflow-hidden rounded-lg shadow-md">
                         <img src={formData.image} alt="Preview" className="h-full w-full object-cover" />
                         <button 
                           type="button"
                           onClick={() => setFormData({ ...formData, image: '' })}
-                          className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
+                          className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
                         >
                           <X size={24} className="text-white" />
                         </button>
@@ -309,7 +315,7 @@ export default function ProductsPage() {
                       type="file" 
                       accept="image/jpeg,image/png"
                       onChange={handleFileChange}
-                      className="absolute inset-0 cursor-pointer opacity-0"
+                      className="absolute inset-0 z-0 cursor-pointer opacity-0"
                     />
                   </div>
                 </div>

@@ -8,6 +8,7 @@ import {
   Package, 
   Users, 
   FileText, 
+  Settings,
   LogOut,
   ChefHat,
   Menu,
@@ -24,6 +25,7 @@ const navItems = [
   { name: 'Documents', icon: FileText, href: '/documents' },
   { name: 'Products', icon: Package, href: '/products' },
   { name: 'Customers', icon: Users, href: '/customers' },
+  { name: 'Settings', icon: Settings, href: '/settings' },
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {

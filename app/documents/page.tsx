@@ -26,6 +26,7 @@ import {
   ArrowRightLeft,
   ChefHat
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<any[]>([]);
@@ -65,7 +66,7 @@ export default function DocumentsPage() {
   const convertDocument = async (docId: string, fromType: string, toType: 'invoice' | 'receipt') => {
     if (!confirm(`Convert this ${fromType} to a ${toType}?`)) return;
     
-    try {
+    const convertPromise = (async () => {
       const docRef = doc(db, 'documents', docId);
       await updateDoc(docRef, {
         type: toType,
@@ -73,10 +74,14 @@ export default function DocumentsPage() {
         updatedAt: serverTimestamp()
       });
       setSelectedDoc(null);
-      alert(`Document converted successfully to ${toType}`);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, 'documents');
-    }
+      return toType;
+    })();
+
+    toast.promise(convertPromise, {
+      loading: `Converting to ${toType}...`,
+      success: (type) => `Successfully converted to ${type}!`,
+      error: 'Failed to convert document'
+    });
   };
 
   return (
@@ -110,8 +115,9 @@ export default function DocumentsPage() {
           </select>
         </div>
 
-        <div className="overflow-hidden rounded-2xl border border-[#7a2b22]/10 bg-white shadow-sm">
-          <table className="w-full text-left">
+        <div className="overflow-x-auto rounded-2xl border border-[#7a2b22]/10 bg-white shadow-sm">
+          <div className="max-h-[60vh] overflow-y-auto no-scrollbar">
+            <table className="w-full text-left">
             <thead className="bg-[#fdfcf0]/50 text-xs font-bold uppercase tracking-wider text-[#3d2b1f]/40">
               <tr>
                 <th className="px-6 py-4">Number</th>
@@ -163,6 +169,7 @@ export default function DocumentsPage() {
               <p>No documents found matching your criteria.</p>
             </div>
           )}
+          </div>
         </div>
       </div>
 
@@ -193,7 +200,7 @@ export default function DocumentsPage() {
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-12">
+              <div id="printable-document" className="flex-1 overflow-y-auto p-12">
                 {/* Print Layout Header */}
                 <div className="mb-12 flex justify-between">
                   <div className="flex items-center gap-4">
@@ -207,32 +214,35 @@ export default function DocumentsPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <h3 className="text-xs font-bold uppercase text-[#c4900a]">{selectedDoc.type}</h3>
-                    <p className="text-2xl font-bold text-[#7a2b22]">#{selectedDoc.documentNumber}</p>
+                    <h3 className="text-xs font-bold uppercase text-[#c4900a] font-black tracking-widest">{selectedDoc.type}</h3>
+                    <p className="text-2xl font-extrabold text-[#7a2b22]">#{selectedDoc.documentNumber}</p>
                     <p className="text-sm text-[#3d2b1f]/60">
-                      {selectedDoc.createdAt?.toDate ? selectedDoc.createdAt.toDate().toLocaleDateString() : 'N/A'}
+                      {selectedDoc.createdAt?.toDate ? selectedDoc.createdAt.toDate().toLocaleDateString('en-GB') : 'N/A'}
                     </p>
                   </div>
                 </div>
 
-                <div className="mb-12 border-t border-b border-[#7a2b22]/5 py-6">
-                  <h4 className="mb-4 text-xs font-bold uppercase text-[#3d2b1f]/40">Items</h4>
+                <div className="mb-12 border-t border-b border-[#7a2b22]/5 py-8">
+                  <h4 className="mb-6 text-xs font-black uppercase text-[#3d2b1f]/30 tracking-widest">Order Summary</h4>
                   <table className="w-full">
-                    <thead className="text-left text-xs font-bold uppercase text-[#3d2b1f]/60">
-                      <tr>
-                        <th className="pb-2">Description</th>
-                        <th className="pb-2">Qty</th>
-                        <th className="pb-2">Price</th>
-                        <th className="pb-2 text-right">Total</th>
+                    <thead className="text-left text-xs font-black uppercase text-[#3d2b1f]/40 tracking-widest">
+                      <tr className="border-b border-[#7a2b22]/5">
+                        <th className="pb-4">Item Details</th>
+                        <th className="pb-4 text-center">Qty</th>
+                        <th className="pb-4 text-right">Price</th>
+                        <th className="pb-4 text-right">Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#7a2b22]/5">
                       {selectedDoc.items.map((item: any, i: number) => (
-                        <tr key={i}>
-                          <td className="py-4 font-medium text-[#3d2b1f]">{item.name}</td>
-                          <td className="py-4 text-[#3d2b1f]/60">{item.quantity}</td>
-                          <td className="py-4 text-[#3d2b1f]/60">E{item.price.toFixed(2)}</td>
-                          <td className="py-4 text-right font-bold text-[#3d2b1f]">E{item.total.toFixed(2)}</td>
+                        <tr key={i} className="group">
+                          <td className="py-5">
+                            <p className="font-bold text-[#3d2b1f]">{item.name}</p>
+                            <p className="text-[10px] uppercase font-black text-[#c4900a]">SKU: {item.id.slice(0, 8)}</p>
+                          </td>
+                          <td className="py-5 text-center font-bold text-[#3d2b1f]/60">{item.quantity}</td>
+                          <td className="py-5 text-right font-medium text-[#3d2b1f]/60">E{item.price.toFixed(2)}</td>
+                          <td className="py-5 text-right font-black text-[#7a2b22]">E{item.total.toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -240,27 +250,35 @@ export default function DocumentsPage() {
                 </div>
 
                 <div className="flex justify-end">
-                  <div className="w-60 space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#3d2b1f]/60">Subtotal</span>
-                      <span className="font-medium">E{selectedDoc.subtotal.toFixed(2)}</span>
+                  <div className="w-72 space-y-4">
+                    <div className="flex justify-between text-sm font-bold text-[#3d2b1f]/40 uppercase tracking-tight">
+                      <span>Subtotal</span>
+                      <span>E{selectedDoc.subtotal.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#3d2b1f]/60">VAT (15%)</span>
-                      <span className="font-medium">E{selectedDoc.vat.toFixed(2)}</span>
+                    <div className="flex justify-between text-sm font-bold text-[#3d2b1f]/40 uppercase tracking-tight">
+                      <span>VAT</span>
+                      <span>E{selectedDoc.vat.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between border-t border-[#7a2b22]/10 pt-3 text-xl font-bold text-[#7a2b22]">
-                      <span>Total</span>
+                    <div className="flex justify-between border-t border-[#7a2b22]/10 pt-4 text-2xl font-black text-[#7a2b22]">
+                      <span className="uppercase text-xs tracking-widest">Total Amount</span>
                       <span>E{selectedDoc.totalAmount.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
+
+                <div className="mt-16 text-center border-t border-[#7a2b22]/5 pt-8">
+                  <p className="font-serif text-xl font-bold text-[#7a2b22]">Thank you for your business!</p>
+                  <p className="mt-2 text-xs text-[#3d2b1f]/40 font-black uppercase tracking-widest">Insika Kitchen • Baked with purpose</p>
+                </div>
               </div>
 
               <div className="flex gap-4 border-t border-[#7a2b22]/10 p-8 bg-[#fdfcf0]/30">
-                <button className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-[#3d2b1f]/10 bg-white py-3 font-semibold text-[#3d2b1f] transition-all hover:bg-gray-50">
+                <button 
+                  onClick={() => window.print()}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#7a2b22]/20 bg-white py-3.5 font-black uppercase tracking-widest text-[#7a2b22] shadow-sm transition-all hover:bg-white/80 active:scale-95"
+                >
                   <Download size={18} />
-                  Download PDF
+                  Export to PDF
                 </button>
                 {selectedDoc.type === 'quotation' && (
                   <button 

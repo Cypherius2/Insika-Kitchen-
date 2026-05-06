@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { Shell } from '@/components/Shell';
 import { useCustomers, useProducts } from '@/lib/hooks';
+import { toast } from 'sonner';
 import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, onSnapshot } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
@@ -75,17 +76,29 @@ export default function CustomersPage() {
     try {
       if (editingCustomer) {
         await updateDoc(doc(db, 'customers', editingCustomer.id), customerData);
+        toast.success(`Customer "${customerData.name}" updated`);
       } else {
         await addDoc(collection(db, 'customers'), {
           ...customerData,
           createdAt: serverTimestamp(),
         });
+        toast.success(`Customer "${customerData.name}" added`);
       }
       setIsModalOpen(false);
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, 'customers');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this customer?')) return;
+    try {
+      await deleteDoc(doc(db, 'customers', id));
+      toast.success('Customer deleted');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, 'customers');
     }
   };
 
@@ -154,6 +167,12 @@ export default function CustomersPage() {
                     className="rounded-lg p-2 text-[#3d2b1f]/30 hover:bg-[#c4900a]/5 hover:text-[#c4900a]"
                   >
                     <History size={18} />
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(c.id)}
+                    className="rounded-lg p-2 text-[#3d2b1f]/30 hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Trash2 size={18} />
                   </button>
                 </div>
               </div>

@@ -52,6 +52,27 @@ export function useCustomers() {
   return { customers, loading };
 }
 
+export function useSettings() {
+  const [settings, setSettings] = useState({ vatRate: 15 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const docRef = doc(db, 'settings', 'global');
+    const unsubscribe = onSnapshot(docRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setSettings({ vatRate: snapshot.data().vatRate || 15 });
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error('Settings error:', error);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  return { settings, loading };
+}
+
 export async function createDocument(orderData: any) {
   try {
     const result = await runTransaction(db, async (transaction) => {
