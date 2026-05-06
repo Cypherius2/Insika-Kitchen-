@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      // Temporarily allowed for "No Sign-in" mode
+      return true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Helpers ---
+
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 200
+        && data.price is number && data.price >= 0
+        && data.category is string
+        && (!('image' in data) || data.image == null || data.image is string)
+        && (!('stock' in data) || data.stock == null || data.stock is number);
+    }
+
+    function isValidCustomer(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 200
+        && (!('email' in data) || data.email == null || data.email is string)
+        && (!('phone' in data) || data.phone == null || data.phone is string)
+        && (!('address' in data) || data.address == null || data.address is string);
+    }
+
+    function isValidDocument(data) {
+      return data.documentNumber is string && data.documentNumber.size() > 0
+        && data.type in ['quotation', 'invoice', 'receipt']
+        && data.items is list && data.items.size() > 0
+        && data.totalAmount is number && data.totalAmount >= 0
+        && data.status in ['draft', 'approved', 'paid', 'cancelled']
+        && (!('customerId' in data) || data.customerId == null || data.customerId is string);
+    }
+
+    function isValidCounter(data) {
+      return data.type is string && data.currentNumber is number && data.currentNumber >= 0;
+    }
+
+    // --- Collection Matches ---
+
+    // Products
+    match /products/{productId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidProduct(incoming()) && isValidId(productId);
+      allow update: if isSignedIn() && isValidProduct(incoming())
+                    && incoming().diff(existing()).affectedKeys().hasAny(['name', 'price', 'category', 'image', 'stock']);
+      allow delete: if isSignedIn();
+    }
+
+    // Customers
+    match /customers/{customerId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidCustomer(incoming()) && isValidId(customerId);
+      allow update: if isSignedIn() && isValidCustomer(incoming())
+                    && incoming().diff(existing()).affectedKeys().hasAny(['name', 'email', 'phone', 'address']);
+      allow delete: if isSignedIn();
+    }
+
+    // Documents
+    match /documents/{docId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidDocument(incoming()) && isValidId(docId);
+      allow update: if isSignedIn() && isValidDocument(incoming())
+                    && (
+                      // Transitioning status or updating items
+                      incoming().diff(existing()).affectedKeys().hasAny(['status', 'items', 'totalAmount', 'subtotal', 'vat', 'type'])
+                    );
+      allow delete: if isSignedIn();
+    }
+
+    // Counters
+    match /counters/{counterId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && isValidCounter(incoming()) && isValidId(counterId);
+    }
+  }
+}
