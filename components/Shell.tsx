@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
-import { useFirebase } from './FirebaseProvider';
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
   ShoppingCart, 
@@ -14,12 +15,10 @@ import {
   Menu,
   X
 } from 'lucide-react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 
-const navItems = [
+const navigation = [
   { name: 'Dashboard', icon: LayoutDashboard, href: '/' },
   { name: 'POS', icon: ShoppingCart, href: '/pos' },
   { name: 'Documents', icon: FileText, href: '/documents' },
@@ -28,194 +27,147 @@ const navItems = [
   { name: 'Settings', icon: Settings, href: '/settings' },
 ];
 
-export function Shell({ children }: { children: React.ReactNode }) {
-  const { user, loading, login, logout } = useFirebase();
-  const pathname = usePathname();
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+import { useSettings } from '@/lib/hooks';
+import { useAuth } from '@/lib/contexts/AuthContext';
+import { LogIn } from 'lucide-react';
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#fdfcf0]">
-        <motion.div 
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-        >
-          <ChefHat size={48} className="text-[#7a2b22]" />
-        </motion.div>
-      </div>
-    );
-  }
+export function Shell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { settings, loading: settingsLoading } = useSettings();
+  const { user, signInWithGoogle, logout } = useAuth();
 
   if (!user) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#fdfcf0] p-4">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl border border-[#7a2b22]/10 text-center"
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#fdfcf0] p-4 text-center">
+        <div 
+          className="mb-8 flex h-24 w-24 items-center justify-center rounded-3xl text-white shadow-2xl"
+          style={{ backgroundColor: settings.brandColor }}
         >
-          <div className="mb-6 flex justify-center">
-            <div className="rounded-full bg-[#fdfcf0] p-4 border-2 border-[#7a2b22]">
-              <ChefHat size={48} className="text-[#7a2b22]" />
-            </div>
-          </div>
-          <h1 className="mb-2 font-serif text-3xl font-bold text-[#7a2b22]">Insika Kitchen</h1>
-          <p className="mb-8 text-[#3d2b1f]/60">Manage your bakery with precision and professional documents.</p>
-          <button 
-            onClick={login}
-            className="flex w-full items-center justify-center gap-3 rounded-lg bg-[#7a2b22] px-6 py-3 font-semibold text-white transition-all hover:bg-[#5a1f19] active:scale-95"
-          >
-            Sign in with Google
-          </button>
-        </motion.div>
+          <ChefHat size={48} />
+        </div>
+        <h1 className="mb-2 font-serif text-4xl font-black tracking-tight" style={{ color: settings.brandColor }}>
+          {settings.businessName}
+        </h1>
+        <p className="mb-8 max-w-sm font-bold text-[#3d2b1f]/40 uppercase tracking-widest text-xs">
+          Exclusive Management Portal
+        </p>
+        <button
+          onClick={signInWithGoogle}
+          className="flex items-center gap-3 rounded-2xl bg-white px-8 py-4 font-black transition-all hover:scale-105 active:scale-95 shadow-xl border border-[#3d2b1f]/5"
+          style={{ color: settings.brandColor }}
+        >
+          <LogIn size={20} />
+          Sign in with Google
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#fdfcf0]">
-      {/* Sidebar - Desktop only */}
-      <motion.aside 
-        initial={false}
-        animate={{ width: isSidebarOpen ? 260 : 80 }}
-        className="relative z-20 hidden flex-col border-r border-[#7a2b22]/10 bg-white shadow-sm md:flex"
-      >
-        <div className="flex h-20 items-center justify-between px-6">
-          <AnimatePresence mode="wait">
-            {isSidebarOpen ? (
-              <motion.div 
-                key="full"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center gap-2"
-              >
-                <ChefHat className="text-[#7a2b22]" />
-                <span className="font-serif text-xl font-bold text-[#7a2b22]">Insika ERP</span>
-              </motion.div>
-            ) : (
-              <motion.div 
-                key="short"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex w-full justify-center"
-              >
-                <ChefHat className="text-[#7a2b22]" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+    <div className="min-h-screen bg-[#fdfcf0] text-[#3d2b1f] selection:bg-[#7a2b22] selection:text-white font-sans overflow-x-hidden">
+      {/* Background Decor */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-40">
+        <div 
+          className="absolute -top-24 -left-24 w-96 h-96 blur-[120px] rounded-full" 
+          style={{ backgroundColor: `${settings.brandColor}15` }}
+        />
+        <div className="absolute top-1/2 -right-48 w-[500px] h-[500px] bg-[#3d2b1f]/5 blur-[150px] rounded-full" />
+      </div>
 
-        <nav className="flex-1 space-y-2 px-3">
-          {navItems.map((item) => {
+      {/* Floating Navigation Dock */}
+      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-2xl px-4 pointer-events-none">
+        <nav 
+          className="flex items-center justify-between gap-2 p-2 rounded-[2rem] bg-white/90 backdrop-blur-3xl border shadow-[0_20px_50px_rgba(0,0,0,0.15)] pointer-events-auto"
+          style={{ borderColor: `${settings.brandColor}15` }}
+        >
+          {navigation.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center gap-4 rounded-lg px-3 py-2.5 transition-colors ${
-                  isActive 
-                    ? 'bg-[#7a2b22] text-white shadow-md' 
-                    : 'text-[#3d2b1f]/70 hover:bg-[#fdfcf0] hover:text-[#7a2b22]'
-                }`}
+                className="relative flex-1 group"
               >
-                <item.icon size={22} className="shrink-0" />
-                {isSidebarOpen && <span className="font-medium">{item.name}</span>}
+                <div
+                  className={cn(
+                    "relative flex items-center justify-center gap-3 h-14 rounded-full transition-all duration-100",
+                    isActive 
+                      ? "px-6" 
+                      : "text-[#3d2b1f]/50 hover:text-[#3d2b1f]"
+                  )}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="active-pill"
+                      className="absolute inset-0 rounded-full shadow-lg"
+                      style={{ backgroundColor: settings.brandColor }}
+                      transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
+                    />
+                  )}
+                  <item.icon size={22} className={cn("relative z-10 transition-colors duration-100", isActive ? "text-white" : "group-hover:scale-110")} />
+                  {isActive && (
+                    <motion.span
+                      layoutId="active-text"
+                      initial={{ opacity: 0, x: -5 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="relative z-10 text-sm font-black whitespace-nowrap overflow-hidden text-white"
+                    >
+                      {item.name}
+                    </motion.span>
+                  )}
+                </div>
               </Link>
             );
           })}
         </nav>
+      </div>
 
-        <div className="border-t border-[#7a2b22]/10 p-3">
-          <button 
-            onClick={logout}
-            className="flex w-full items-center gap-4 rounded-lg px-3 py-2.5 text-red-600 transition-colors hover:bg-red-50"
-          >
-            <LogOut size={22} className="shrink-0" />
-            {isSidebarOpen && <span className="font-medium">Logout</span>}
-          </button>
-        </div>
-      </motion.aside>
-
-      {/* Floating Bottom Navigation - Mobile only */}
-      <div className="fixed bottom-6 left-0 right-0 z-50 flex justify-center px-4 md:hidden">
-        <motion.nav 
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="flex h-14 items-center gap-1.5 rounded-full border border-white/10 bg-[#1a120b]/90 p-1.5 shadow-2xl backdrop-blur-2xl"
-        >
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`group relative flex items-center justify-center transition-all ${
-                  isActive 
-                    ? 'rounded-full bg-white px-4 py-2 text-black shadow-lg' 
-                    : 'h-10 w-10 text-white/50 hover:text-white'
-                }`}
+      {/* Main Content Area */}
+      <main className="relative z-10 min-h-screen pb-40">
+        <div className="max-w-7xl mx-auto p-4 md:p-8 pt-6 md:pt-12">
+          {/* Header branding */}
+          <div className="flex items-center justify-between mb-8 px-2">
+            <div className="flex items-center gap-3">
+              <div 
+                className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl bg-[#7a2b22] text-white shadow-lg"
+                style={{ backgroundColor: settings.brandColor, boxShadow: `0 8px 20px ${settings.brandColor}33` }}
               >
-                <item.icon size={ isActive ? 18 : 20 } className={isActive ? 'mr-2' : ''} />
-                {isActive && (
-                  <motion.span 
-                    layoutId="pill-text"
-                    className="text-xs font-bold leading-none tracking-tight"
-                  >
-                    {item.name}
-                  </motion.span>
+                {settings.logoUrl ? (
+                  <img src={settings.logoUrl} alt="Logo" className="h-full w-full object-contain" />
+                ) : (
+                  <ChefHat size={24} />
                 )}
-              </Link>
-            );
-          })}
-          <div className="mx-1 h-6 w-px bg-white/10" />
-          <button 
-            onClick={logout}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-red-400 hover:bg-red-500/10 active:scale-95"
-          >
-            <LogOut size={20} />
-          </button>
-        </motion.nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-20 items-center justify-between border-b border-[#7a2b22]/10 bg-white px-8">
-          <div className="flex items-center gap-4">
+              </div>
+              <span 
+                className="font-serif text-xl font-black tracking-tighter"
+                style={{ color: settings.brandColor }}
+              >
+                {settings.businessName}
+              </span>
+            </div>
             <button 
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="hidden rounded-lg p-2 text-[#3d2b1f]/60 hover:bg-[#fdfcf0] md:block"
+              onClick={logout}
+              className="group flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest text-[#3d2b1f]/40 border transition-all hover:bg-[#7a2b22] hover:text-white hover:border-[#7a2b22]"
+              style={{ borderColor: `${settings.brandColor}10` }}
             >
-              {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
+              <LogOut size={14} className="transition-colors group-hover:text-white" />
+              Sign Out
             </button>
-            <div className="flex items-center gap-2 md:hidden">
-              <ChefHat className="text-[#7a2b22]" />
-              <span className="font-serif text-xl font-bold text-[#7a2b22]">Insika Kitchen</span>
-            </div>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="hidden text-right sm:block">
-              <p className="text-sm font-medium text-[#c4900a]">Insika Kitchen</p>
-              <p className="text-xs text-[#3d2b1f]/60">{user.email}</p>
-            </div>
-            <div className="relative h-10 w-10 overflow-hidden rounded-full border-2 border-[#d4a017]">
-              <Image 
-                src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}`} 
-                alt="User" 
-                fill 
-                className="object-cover"
-                referrerPolicy="no-referrer"
-              />
-            </div>
-          </div>
-        </header>
 
-        <main className="flex-1 overflow-y-auto p-4 pb-24 md:p-8">
-          {children}
-        </main>
-      </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.1, ease: "easeOut" }}
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </main>
     </div>
   );
 }

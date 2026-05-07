@@ -1,115 +1,85 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { 
-  collection, 
-  query, 
-  onSnapshot, 
-  orderBy, 
-  addDoc, 
-  updateDoc, 
-  doc, 
-  increment,
-  getDoc,
-  runTransaction,
-  serverTimestamp 
-} from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from './firebase';
 
+import { useAuth } from './contexts/AuthContext';
+
 export function useProducts() {
+  const { user } = useAuth();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!db || !user) {
+      if (!user) setLoading(false);
+      return;
+    }
     const q = query(collection(db, 'products'), orderBy('name', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProducts(docs);
       setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'products');
-    });
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'products'));
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   return { products, loading };
 }
 
 export function useCustomers() {
+  const { user } = useAuth();
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!db || !user) {
+      if (!user) setLoading(false);
+      return;
+    }
     const q = query(collection(db, 'customers'), orderBy('name', 'asc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setCustomers(docs);
       setLoading(false);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'customers');
-    });
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'customers'));
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   return { customers, loading };
 }
 
 export function useSettings() {
-  const [settings, setSettings] = useState({ vatRate: 15 });
+  const { user } = useAuth();
+  const [settings, setSettings] = useState({ 
+    vatRate: 15,
+    logoUrl: '',
+    brandColor: '#7a2b22',
+    businessName: 'Insika Kitchen'
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!db || !user) {
+      if (!user) setLoading(false);
+      return;
+    }
     const docRef = doc(db, 'settings', 'global');
     const unsubscribe = onSnapshot(docRef, (snapshot) => {
       if (snapshot.exists()) {
-        setSettings({ vatRate: snapshot.data().vatRate || 15 });
+        const data = snapshot.data();
+        setSettings({ 
+          vatRate: data.vatRate || 15,
+          logoUrl: data.logoUrl || '',
+          brandColor: data.brandColor || '#7a2b22',
+          businessName: data.businessName || 'Insika Kitchen'
+        });
       }
       setLoading(false);
-    }, (error) => {
-      console.error('Settings error:', error);
-      setLoading(false);
-    });
+    }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/global'));
     return () => unsubscribe();
-  }, []);
+  }, [user]);
 
   return { settings, loading };
-}
-
-export async function createDocument(orderData: any) {
-  try {
-    const result = await runTransaction(db, async (transaction) => {
-      // 1. Get and increment counter
-      const counterRef = doc(db, 'counters', orderData.type);
-      const counterSnap = await transaction.get(counterRef);
-      
-      let nextNumber = 1;
-      if (counterSnap.exists()) {
-        nextNumber = counterSnap.data().currentNumber + 1;
-        transaction.update(counterRef, { currentNumber: nextNumber });
-      } else {
-        transaction.set(counterRef, { type: orderData.type, currentNumber: 1 });
-      }
-
-      const docNumber = `${orderData.type.toUpperCase()}-${String(nextNumber).padStart(5, '0')}`;
-      
-      // 2. Create document
-      const docRef = doc(collection(db, 'documents'));
-      const finalData = {
-        ...orderData,
-        documentNumber: docNumber,
-        createdAt: serverTimestamp(),
-      };
-      transaction.set(docRef, finalData);
-
-      // 3. Update stock (optional but recommended in blueprint)
-      for (const item of orderData.items) {
-        const productRef = doc(db, 'products', item.productId);
-        transaction.update(productRef, { stock: increment(-item.quantity) });
-      }
-
-      return { id: docRef.id, documentNumber: docNumber };
-    });
-    
-    return result;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, 'documents');
-  }
 }

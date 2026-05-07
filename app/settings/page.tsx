@@ -5,41 +5,63 @@ import { Shell } from '@/components/Shell';
 import { motion } from 'motion/react';
 import { Save, Percent, ShieldCheck, Database, Sliders } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { toast } from 'sonner';
+import { useAuth } from '@/lib/contexts/AuthContext';
 
 export default function SettingsPage() {
+  const { user } = useAuth();
   const [vatRate, setVatRate] = useState(15);
+  const [logoUrl, setLogoUrl] = useState('');
+  const [brandColor, setBrandColor] = useState('#7a2b22');
+  const [businessName, setBusinessName] = useState('Insika Kitchen');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     async function fetchSettings() {
+      if (!db || !user) {
+        if (!user) setLoading(false);
+        return;
+      }
       try {
         const docRef = doc(db, 'settings', 'global');
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
-          setVatRate(docSnap.data().vatRate || 15);
+          const data = docSnap.data();
+          setVatRate(data.vatRate || 15);
+          setLogoUrl(data.logoUrl || '');
+          setBrandColor(data.brandColor || '#7a2b22');
+          setBusinessName(data.businessName || 'Insika Kitchen');
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
+        handleFirestoreError(error, OperationType.GET, 'settings/global');
       } finally {
         setLoading(false);
       }
     }
     fetchSettings();
-  }, []);
+  }, [user]);
 
   const handleSave = async () => {
+    if (!db) {
+      toast.error('Database not initialized');
+      return;
+    }
     setSaving(true);
     try {
       await setDoc(doc(db, 'settings', 'global'), {
         vatRate: parseFloat(vatRate.toString()),
+        logoUrl,
+        brandColor,
+        businessName,
         updatedAt: new Date(),
       }, { merge: true });
       toast.success('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
+      handleFirestoreError(error, OperationType.WRITE, 'settings/global');
       toast.error('Failed to save settings');
     } finally {
       setSaving(false);
@@ -48,13 +70,86 @@ export default function SettingsPage() {
 
   return (
     <Shell>
-      <div className="mx-auto max-w-4xl space-y-8">
+      <div className="mx-auto max-w-4xl space-y-8 pb-32">
         <header>
           <h1 className="font-serif text-3xl font-bold text-[#7a2b22]">General Settings</h1>
-          <p className="text-[#3d2b1f]/60">Configure global application variables and business logic.</p>
+          <p className="text-[#3d2b1f]/60">Configure global application variables and business branding.</p>
         </header>
 
+        {/* Branding Section */}
         <div className="grid gap-6 md:grid-cols-3">
+          <div className="md:col-span-1">
+            <h2 className="text-lg font-bold text-[#3d2b1f]">Business Branding</h2>
+            <p className="text-sm text-[#3d2b1f]/50">Customize your brand identity including logo and theme colors.</p>
+          </div>
+          
+          <div className="md:col-span-2">
+            <div className="rounded-2xl border border-[#7a2b22]/10 bg-white p-6 shadow-sm space-y-6">
+              {loading ? (
+                <div className="flex animate-pulse space-x-4">
+                  <div className="h-40 w-full rounded-lg bg-gray-100" />
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <label className="mb-2 block text-sm font-black uppercase tracking-widest text-[#7a2b22]/60">Business Name</label>
+                    <input 
+                      type="text" 
+                      value={businessName}
+                      onChange={(e) => setBusinessName(e.target.value)}
+                      className="w-full rounded-xl border border-[#7a2b22]/10 bg-[#fdfcf0]/30 p-4 font-bold text-[#3d2b1f] outline-none transition-all focus:border-[#7a2b22]/30 focus:bg-white"
+                      placeholder="e.g. Insika Kitchen"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-black uppercase tracking-widest text-[#7a2b22]/60">Logo URL</label>
+                    <div className="flex gap-4">
+                      <div className="relative flex-1">
+                        <input 
+                          type="url" 
+                          value={logoUrl}
+                          onChange={(e) => setLogoUrl(e.target.value)}
+                          className="w-full rounded-xl border border-[#7a2b22]/10 bg-[#fdfcf0]/30 p-4 font-bold text-[#3d2b1f] outline-none transition-all focus:border-[#7a2b22]/30 focus:bg-white"
+                          placeholder="https://example.com/logo.png"
+                        />
+                      </div>
+                      <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[#7a2b22]/10 bg-[#fdfcf0]/50">
+                        {logoUrl ? (
+                          <img src={logoUrl} alt="Preview" className="h-full w-full object-contain" />
+                        ) : (
+                          <Database className="text-[#7a2b22]/20" size={24} />
+                        )}
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs text-[#3d2b1f]/40">Provide a direct link to your bakery logo (transparent PNG recommended).</p>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-black uppercase tracking-widest text-[#7a2b22]/60">Brand Color</label>
+                    <div className="flex items-center gap-4">
+                      <input 
+                        type="color" 
+                        value={brandColor}
+                        onChange={(e) => setBrandColor(e.target.value)}
+                        className="h-12 w-24 cursor-pointer rounded-lg border-none p-0"
+                      />
+                      <input 
+                        type="text" 
+                        value={brandColor}
+                        onChange={(e) => setBrandColor(e.target.value)}
+                        className="flex-1 rounded-xl border border-[#7a2b22]/10 bg-[#fdfcf0]/30 p-4 font-mono font-bold text-[#3d2b1f] outline-none transition-all focus:border-[#7a2b22]/30 focus:bg-white"
+                        placeholder="#7a2b22"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3 pt-8 border-t border-[#7a2b22]/10">
           <div className="md:col-span-1">
             <h2 className="text-lg font-bold text-[#3d2b1f]">Tax Configuration</h2>
             <p className="text-sm text-[#3d2b1f]/50">Manage how taxes are applied to your documents and POS transactions.</p>
@@ -82,9 +177,6 @@ export default function SettingsPage() {
                         placeholder="e.g. 15"
                       />
                     </div>
-                    <p className="mt-2 text-xs text-[#3d2b1f]/40">
-                      Changes will apply to all NEW transactions. Past records remain unchanged.
-                    </p>
                   </div>
                   
                   <div className="flex justify-end">
@@ -92,6 +184,7 @@ export default function SettingsPage() {
                       onClick={handleSave}
                       disabled={saving}
                       className="flex items-center gap-2 rounded-xl bg-[#7a2b22] px-8 py-3.5 font-black uppercase tracking-widest text-white shadow-lg transition-all hover:bg-[#5a1f19] active:scale-95 disabled:opacity-50"
+                      style={{ backgroundColor: brandColor }}
                     >
                       <Save size={18} />
                       {saving ? 'Saving...' : 'Save Settings'}

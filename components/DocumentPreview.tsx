@@ -1,136 +1,179 @@
 'use client';
 
 import React from 'react';
-import { motion } from 'motion/react';
-import { X, Receipt, FileText, Quote, ChefHat, CheckCircle2 } from 'lucide-react';
+import { ChefHat, Download, FileText, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface DocumentPreviewProps {
-  document: any;
+  isOpen: boolean;
   onClose: () => void;
+  document: any;
 }
 
-export function DocumentPreview({ document, onClose }: DocumentPreviewProps) {
-  const { type, items, totalAmount, subtotal, vat, documentNumber, createdAt } = document;
-  
-  const accentColor = type === 'receipt' ? 'bg-emerald-600' : 'bg-[#7a2b22]';
-  const Icon = type === 'receipt' ? Receipt : (type === 'invoice' ? FileText : Quote);
-  const statusLabel = type === 'receipt' ? 'Payment Successful' : (type === 'invoice' ? 'Invoice Generated' : 'Quotation Issued');
+import { useSettings } from '@/lib/hooks';
+
+export function DocumentPreview({ isOpen, onClose, document: docData }: DocumentPreviewProps) {
+  const { settings } = useSettings();
+  if (!docData) return null;
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const {
+    documentNumber,
+    type,
+    customer,
+    items = [],
+    subtotal = 0,
+    vat = 0,
+    totalAmount = 0,
+    createdAt,
+    businessName: docBusinessName,
+    logoUrl: docLogoUrl
+  } = docData;
+
+  const brandColor = settings.brandColor || '#7a2b22';
+  const businessName = docBusinessName || settings.businessName || 'Insika Kitchen';
+  const logoUrl = docLogoUrl || settings.logoUrl;
+
+  const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+  const accentColor = type === 'receipt' ? 'bg-green-600' : type === 'invoice' ? 'bg-blue-600' : 'bg-[#c4900a]';
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#1a120b]/60 backdrop-blur-md">
-      <motion.div 
-        initial={{ opacity: 0, y: 50, scale: 0.9 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 50, scale: 0.9 }}
-        className="relative w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl"
-      >
-        {/* Dynamic Header */}
-        <div className={`p-8 text-white ${accentColor} flex items-center justify-between`}>
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md">
-              <Icon size={28} />
-            </div>
-            <div>
-              <h2 className="font-serif text-2xl font-bold uppercase tracking-tight">{type}</h2>
-              <p className="flex items-center gap-1.5 text-xs font-bold text-white/80">
-                <CheckCircle2 size={12} />
-                {statusLabel}
-              </p>
-            </div>
-          </div>
-          <button 
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={onClose}
-            className="rounded-full bg-white/10 p-2 transition-colors hover:bg-white/20"
+            className="fixed inset-0 z-[60] bg-[#3d2b1f]/40 backdrop-blur-sm"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            className="fixed inset-x-4 top-4 z-[70] mx-auto max-w-4xl overflow-hidden rounded-3xl bg-white shadow-2xl md:inset-y-10"
           >
-            <X size={24} />
-          </button>
-        </div>
-
-        <div id="printable-document" className="p-8 overflow-y-auto max-h-[70vh] no-scrollbar">
-          <div className="mb-8 flex flex-col md:flex-row md:items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 text-[#7a2b22]">
-                <ChefHat size={32} />
-                <h1 className="font-serif text-3xl font-black">Insika Kitchen</h1>
+            <div className="flex h-16 items-center justify-between border-b border-[#7a2b22]/5 bg-[#fdfcf0]/50 px-8">
+              <div className="flex items-center gap-3">
+                <FileText className="text-[#3d2b1f]/40" size={20} />
+                <span className="text-sm font-black uppercase tracking-widest text-[#3d2b1f]/60">Document Preview</span>
               </div>
-              <p className="mt-1 text-sm text-[#3d2b1f]/40 font-bold">The Home of Fresh Bakes</p>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={handlePrint}
+                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 no-print"
+                  style={{ backgroundColor: brandColor }}
+                >
+                  <Download size={14} />
+                  Download PDF
+                </button>
+                <button 
+                  onClick={onClose}
+                  className="rounded-full p-2 text-[#3d2b1f]/40 hover:bg-[#7a2b22]/5 hover:text-[#7a2b22] no-print"
+                >
+                  <X size={24} />
+                </button>
+              </div>
             </div>
-            <div className="md:text-right">
-              <p className="text-xs font-black uppercase tracking-widest text-[#3d2b1f]/40">Document ID</p>
-              <p className="text-xl font-black text-[#3d2b1f]">#{documentNumber}</p>
-              <p className="mt-1 text-sm font-bold text-[#c4900a]">
-                {createdAt?.toDate ? createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-GB')}
-              </p>
-            </div>
-          </div>
 
-          <div className="border-y border-[#7a2b22]/5 py-6">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-[10px] font-black uppercase tracking-widest text-[#3d2b1f]/40">
-                  <th className="pb-4">Quantity & Item</th>
-                  <th className="pb-4 text-right">Unit Price</th>
-                  <th className="pb-4 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#7a2b22]/5">
-                {items.map((item: any, idx: number) => (
-                  <tr key={idx} className="group">
-                    <td className="py-4">
-                      <p className="text-sm font-bold text-[#3d2b1f]">{item.name}</p>
-                      <p className="text-xs text-[#3d2b1f]/40 uppercase font-bold tracking-tighter">Qty: {item.quantity}</p>
-                    </td>
-                    <td className="py-4 text-right">
-                      <span className="text-sm font-medium text-[#3d2b1f]/60">E{item.price.toFixed(2)}</span>
-                    </td>
-                    <td className="py-4 text-right">
-                      <span className="text-sm font-black text-[#3d2b1f]">E{item.total.toFixed(2)}</span>
-                    </td>
+            <div id="printable-document" className="h-full overflow-y-auto p-12 pb-32 no-scrollbar">
+              <div className="mb-12 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
+                <div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-[#7a2b22]/5">
+                      {logoUrl ? (
+                        <img src={logoUrl} alt="Logo" className="h-full w-full object-contain" />
+                      ) : (
+                        <ChefHat size={40} style={{ color: brandColor }} />
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-serif text-3xl font-black" style={{ color: brandColor }}>{businessName}</span>
+                      <p className="text-xs font-bold text-[#3d2b1f]/40 uppercase tracking-widest">Home of Fresh Bakes & Culinary Excellence</p>
+                    </div>
+                  </div>
+                  <p className="mt-6 text-xs font-bold text-[#3d2b1f]/60 uppercase tracking-widest leading-relaxed">
+                    Mbabane, Eswatini<br />
+                    +268 7600 0000<br />
+                    insika.kitchen@gmail.com
+                  </p>
+                </div>
+                <div className="text-left md:text-right">
+                  <div className={cn("inline-block rounded-xl px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white mb-2", accentColor)}>
+                    {typeLabel}
+                  </div>
+                  <p className="text-4xl font-black text-[#3d2b1f]">#{documentNumber}</p>
+                  <p className="mt-1 text-sm font-bold text-[#3d2b1f]/40">
+                    {createdAt?.toDate ? createdAt.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-GB')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-12 grid grid-cols-2 gap-8 border-y py-8" style={{ borderColor: `${brandColor}10` }}>
+                <div>
+                  <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-[#3d2b1f]/30">Bill To</p>
+                  <p className="text-lg font-black text-[#3d2b1f]">{customer?.name || 'Walk-in Customer'}</p>
+                  <p className="text-sm font-bold text-[#3d2b1f]/60">{customer?.phone}</p>
+                  <p className="text-sm font-bold text-[#3d2b1f]/60">{customer?.email}</p>
+                </div>
+                <div className="text-right">
+                  <p className="mb-3 text-[10px] font-black uppercase tracking-widest text-[#3d2b1f]/30">Payment Method</p>
+                  <p className="text-sm font-black text-[#3d2b1f] uppercase tracking-widest">Cash / Mobile Money</p>
+                </div>
+              </div>
+
+              <table className="mb-12 w-full">
+                <thead>
+                  <tr className="border-b-2 text-[10px] font-black uppercase tracking-[0.2em] text-[#3d2b1f]" style={{ borderBottomColor: brandColor }}>
+                    <th className="pb-4 text-left">Description</th>
+                    <th className="pb-4 text-center">Qty</th>
+                    <th className="pb-4 text-right">Price</th>
+                    <th className="pb-4 text-right">Amount</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y" style={{ borderColor: `${brandColor}05` }}>
+                  {items.map((item: any, i: number) => (
+                    <tr key={i} className="text-sm">
+                      <td className="py-5 font-bold text-[#3d2b1f]">{item.name}</td>
+                      <td className="py-5 text-center font-bold text-[#3d2b1f]/60">{item.quantity}</td>
+                      <td className="py-5 text-right font-bold text-[#3d2b1f]/60">E{item.price.toFixed(2)}</td>
+                      <td className="py-5 text-right font-black text-[#3d2b1f]">E{(item.price * item.quantity).toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-          <div className="mt-8 flex justify-end">
-            <div className="w-full max-w-xs space-y-3">
-              <div className="flex justify-between text-sm font-bold text-[#3d2b1f]/40 uppercase tracking-tight">
-                <span>Subtotal</span>
-                <span>E{subtotal.toFixed(2)}</span>
+              <div className="ml-auto w-full max-w-xs space-y-3">
+                <div className="flex justify-between text-sm font-bold text-[#3d2b1f]/60">
+                  <span>Subtotal</span>
+                  <span>E{subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold text-[#3d2b1f]/40 uppercase tracking-tight">
+                  <span>VAT</span>
+                  <span>E{vat.toFixed(2)}</span>
+                </div>
+                <div className={cn("flex justify-between rounded-2xl p-4 text-xl font-black text-white", accentColor)}>
+                  <span>Total</span>
+                  <span>E{totalAmount.toFixed(2)}</span>
+                </div>
               </div>
-              <div className="flex justify-between text-sm font-bold text-[#3d2b1f]/40 uppercase tracking-tight">
-                <span>VAT</span>
-                <span>E{vat.toFixed(2)}</span>
-              </div>
-              <div className={`flex justify-between rounded-2xl p-4 text-white ${accentColor}`}>
-                <span className="text-lg font-black uppercase">Total Due</span>
-                <span className="text-2xl font-black">E{totalAmount.toFixed(2)}</span>
+
+              <div className="mt-20 border-t pt-8 text-center" style={{ borderTopColor: `${brandColor}10` }}>
+                <p className="font-serif text-lg font-black" style={{ color: brandColor }}>Thank you for your business!</p>
+                <p className="mt-1 text-xs font-bold text-[#3d2b1f]/40 uppercase tracking-widest">Eat Fresh, Stay Happy</p>
               </div>
             </div>
-          </div>
-
-          <div className="mt-12 text-center">
-            <p className="font-serif text-lg font-bold text-[#7a2b22]">Thank you for your patronage!</p>
-            <p className="mt-1 text-xs text-[#3d2b1f]/40 font-bold uppercase tracking-widest">Insika Kitchen • Baked with purpose</p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="border-t border-[#7a2b22]/5 bg-[#fdfcf0]/50 p-6 flex gap-4">
-          <button 
-            onClick={() => window.print()}
-            className="flex-1 rounded-xl border border-[#7a2b22]/20 bg-white py-3 text-sm font-black uppercase tracking-widest text-[#7a2b22] shadow-sm transition-all hover:bg-[#7a2b22]/5 active:scale-95"
-          >
-            Download PDF
-          </button>
-          <button 
-            onClick={onClose}
-            className={`flex-1 rounded-xl py-3 text-sm font-black uppercase tracking-widest text-white shadow-xl transition-all active:scale-95 ${accentColor}`}
-          >
-            Close Receipt
-          </button>
-        </div>
-      </motion.div>
-    </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
+}
+
+function cn(...classes: string[]) {
+  return classes.filter(Boolean).join(' ');
 }

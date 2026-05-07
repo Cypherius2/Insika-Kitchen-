@@ -2,30 +2,17 @@
 
 @layer base {
   @media print {
-    /* Hide everything by default */
     body * {
       visibility: hidden;
     }
-    
-    /* Only show the element we want to print */
     #printable-document, #printable-document * {
       visibility: visible;
     }
-    
     #printable-document {
       position: absolute;
       left: 0;
       top: 0;
       width: 100%;
-      padding: 0 !important;
-      margin: 0 !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
-
-    /* Hide non-printable elements inside the printable document if any */
-    .no-print {
-      display: none !important;
     }
   }
 }
@@ -37,4 +24,3 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
-

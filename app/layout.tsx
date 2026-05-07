@@ -1,32 +1,37 @@
-import type { Metadata } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
-import './globals.css';
+import type { Metadata } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
+import "./globals.css";
 import { Toaster } from 'sonner';
-import { FirebaseProvider } from '@/components/FirebaseProvider';
 
 const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
+  subsets: ["latin"],
+  variable: "--font-inter",
 });
 
 const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-serif',
+  subsets: ["latin"],
+  variable: "--font-playfair",
 });
 
 export const metadata: Metadata = {
-  title: 'Insika Kitchen ERP',
-  description: 'Professional ERP and POS for Insika Kitchen',
+  title: "Insika Kitchen | Home of Fresh Bakes",
+  description: "Bespoke POS and management system for Insika Kitchen",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+import { AuthProvider } from '@/lib/contexts/AuthContext';
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
-      <body suppressHydrationWarning className="bg-[#fdfcf0] text-[#3d2b1f] font-sans antialiased">
-        <FirebaseProvider>
+      <body className="antialiased">
+        <AuthProvider>
           {children}
           <Toaster position="top-right" richColors />
-        </FirebaseProvider>
+        </AuthProvider>
       </body>
     </html>
   );

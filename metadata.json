@@ -1,6 +1,5 @@
 {
-  "name": "Insika Kitchen ERP",
-  "description": "A professional ERP and POS system for Insika Kitchen, featuring product management, customer tracking, and document generation (quotations, invoices, receipts).",
-  "requestFramePermissions": [],
-  "majorCapabilities": []
+  "name": "Insika Kitchen",
+  "description": "A POS and document management system for a kitchen/bakery business.",
+  "requestFramePermissions": []
 }
