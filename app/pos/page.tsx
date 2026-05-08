@@ -160,7 +160,9 @@ export default function POSPage() {
       if (selectedCustomer?.email && settings.autoEmail !== false) {
         sendDocumentEmail(selectedCustomer.email, documentNumber, type, { 
           items: cart, 
-          total: total 
+          total: total,
+          settings: settings,
+          customer: selectedCustomer
         });
       }
 
@@ -170,7 +172,10 @@ export default function POSPage() {
       toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} generated successfully!`);
     } catch (error) {
       console.error('Checkout error:', error);
-      handleFirestoreError(error, OperationType.WRITE, 'checkout');
+      // Determine if it was a documents create or products update error
+      const path = (error as any)?.message?.includes('documents') ? 'documents-create' : 
+                   (error as any)?.message?.includes('products') ? 'products-stock-update' : 'checkout';
+      handleFirestoreError(error, OperationType.WRITE, path);
       toast.error('Failed to process transaction');
     } finally {
       setIsProcessing(false);
@@ -402,7 +407,14 @@ export default function POSPage() {
                 
                 {lastOrder?.customer?.email && (
                   <button 
-                    onClick={() => sendDocumentEmail(lastOrder.customer.email, lastOrder.documentNumber, lastOrder.type)}
+                    onClick={() => sendDocumentEmail(lastOrder.customer.email, lastOrder.documentNumber, lastOrder.type, {
+                      items: lastOrder.items,
+                      total: lastOrder.totalAmount,
+                      subtotal: lastOrder.subtotal,
+                      vat: lastOrder.vat,
+                      customer: lastOrder.customer,
+                      settings: settings
+                    })}
                     className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white border-2 py-4 font-black uppercase tracking-widest transition-all active:scale-95"
                     style={{ borderColor: `${settings.brandColor}1A`, color: settings.brandColor }}
                   >

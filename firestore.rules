@@ -16,7 +16,6 @@ service cloud.firestore {
              (!('price' in data) || (data.price is number && data.price >= 0)) &&
              (!('stock' in data) || (data.stock is number)) &&
              (!('image' in data) || (data.image == null || (data.image is string && data.image.size() <= 2000))) &&
-             (resource == null ? (!('createdAt' in data) || data.createdAt == request.time) : true) &&
              (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt == request.time);
     }
 
@@ -25,7 +24,7 @@ service cloud.firestore {
              (!('email' in data) || (data.email == null || (data.email is string && data.email.size() <= 500))) &&
              (!('phone' in data) || (data.phone == null || (data.phone is string && data.phone.size() <= 100))) &&
              (!('address' in data) || (data.address == null || (data.address is string && data.address.size() <= 5000))) &&
-             (resource == null ? (!('createdAt' in data) || data.createdAt == request.time) : true) &&
+             (!('createdAt' in data) || data.createdAt is timestamp || data.createdAt == request.time) &&
              (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt == request.time);
     }
 
@@ -33,15 +32,15 @@ service cloud.firestore {
       return data.keys().hasAll(['documentNumber', 'type', 'totalAmount', 'items', 'customer']) &&
              data.documentNumber is string &&
              data.type in ['invoice', 'receipt', 'quotation'] &&
-             (!('totalAmount' in data) || data.totalAmount is number) &&
-             (!('items' in data) || data.items is list) &&
-             (!('customer' in data) || data.customer is map) &&
+             data.totalAmount is number &&
+             data.items is list &&
+             data.customer is map &&
              (!('status' in data) || data.status is string) &&
              (!('subtotal' in data) || data.subtotal is number) &&
              (!('vat' in data) || data.vat is number) &&
-             (!('businessName' in data) || data.businessName is string) &&
+             (!('businessName' in data) || (data.businessName == null || data.businessName is string)) &&
              (!('logoUrl' in data) || (data.logoUrl == null || data.logoUrl is string)) &&
-             (resource == null ? (!('createdAt' in data) || data.createdAt == request.time) : true);
+             (!('createdAt' in data) || data.createdAt is timestamp || data.createdAt == request.time);
     }
 
     function isValidSettings(data) {
@@ -50,36 +49,39 @@ service cloud.firestore {
              (!('vatRate' in data) || (data.vatRate is number && data.vatRate >= 0)) &&
              (!('logoUrl' in data) || (data.logoUrl is string && data.logoUrl.size() <= 2000)) &&
              (!('lowStockThreshold' in data) || (data.lowStockThreshold is number && data.lowStockThreshold >= 0)) &&
-             (!('updatedAt' in data) || (data.updatedAt is timestamp || data.updatedAt == request.time)) &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp || data.updatedAt == request.time) &&
              (!('autoEmail' in data) || (data.autoEmail is bool));
     }
 
-    // Role-based access could be added here. For a small business, we'll allow all signed-in users.
-    // In a prod app, we'd check for a 'staff' or 'admin' flag on the user document.
-
     match /products/{productId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && isValidProduct(incoming()) && isValidId(productId);
-      allow update: if isSignedIn() && isValidProduct(incoming());
+      allow create: if isSignedIn() && isValidProduct(incoming());
+      allow update: if isSignedIn() && (
+        // Action: Update Stock
+        (incoming().diff(existing()).affectedKeys().hasOnly(['stock', 'updatedAt']) ||
+         incoming().diff(existing()).affectedKeys().hasOnly(['stock'])) ||
+        // Action: Update Product Details
+        isValidProduct(incoming())
+      );
       allow delete: if isSignedIn();
     }
 
     match /customers/{customerId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && isValidCustomer(incoming()) && isValidId(customerId);
+      allow create: if isSignedIn() && isValidCustomer(incoming());
       allow update: if isSignedIn() && isValidCustomer(incoming());
       allow delete: if isSignedIn();
     }
 
     match /documents/{docId} {
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && isValidDocument(incoming()) && isValidId(docId);
+      allow create: if isSignedIn() && isValidDocument(incoming());
       allow delete: if isSignedIn();
     }
 
     match /settings/{docId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && isValidSettings(incoming()) && isValidId(docId);
+      allow write: if isSignedIn() && isValidSettings(incoming());
     }
   }
 }

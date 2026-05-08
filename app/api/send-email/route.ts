@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
-    const { to, subject, html } = await req.json();
+    const { to, subject, html, attachments } = await req.json();
 
     if (!process.env.RESEND_API_KEY) {
       console.error('RESEND_API_KEY is missing');
@@ -16,11 +16,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing required fields (to, subject, or html)' }, { status: 400 });
     }
 
+    const processedAttachments = (attachments || []).map((att: any) => ({
+      filename: att.filename,
+      content: typeof att.content === 'string' ? Buffer.from(att.content, 'base64') : att.content,
+    }));
+
     const { data, error } = await resend.emails.send({
       from: 'onboarding@resend.dev',
       to: [to],
       subject: subject,
       html: html,
+      attachments: processedAttachments,
     });
 
     if (error) {

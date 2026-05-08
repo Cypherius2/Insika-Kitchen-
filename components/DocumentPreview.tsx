@@ -66,7 +66,14 @@ export function DocumentPreview({ isOpen, onClose, document: docData }: Document
               <div className="flex items-center gap-2">
                 {customer?.email && (
                   <button 
-                    onClick={() => sendDocumentEmail(customer.email, documentNumber, type)}
+                    onClick={() => sendDocumentEmail(customer.email, documentNumber, type, {
+                      items,
+                      subtotal,
+                      vat,
+                      total: totalAmount,
+                      settings,
+                      customer
+                    })}
                     className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest bg-white border-2 transition-all active:scale-95 no-print"
                     style={{ borderColor: `${brandColor}1A`, color: brandColor }}
                   >
