@@ -75,25 +75,26 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Floating Navigation Dock */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-[95%] max-w-2xl px-4 pointer-events-none">
-        <nav 
-          className="flex items-center justify-between gap-2 p-2 rounded-[2rem] bg-white/90 backdrop-blur-3xl border shadow-[0_20px_50px_rgba(0,0,0,0.15)] pointer-events-auto"
-          style={{ borderColor: `${settings.brandColor}15` }}
-        >
+      <nav 
+        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex w-[95%] max-w-2xl items-center justify-between gap-2 p-2 rounded-[2rem] bg-white/95 backdrop-blur-3xl border shadow-[0_30px_60px_rgba(0,0,0,0.15)] transition-all"
+        style={{ borderColor: `${settings.brandColor}20` }}
+      >
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                className="relative flex-1 group"
+                className="relative flex-1"
+                draggable={false}
               >
-                <div
+                <motion.div
+                  whileTap={{ scale: 0.92 }}
                   className={cn(
                     "relative flex items-center justify-center gap-3 h-14 rounded-full transition-all duration-100",
                     isActive 
                       ? "px-6" 
-                      : "text-[#3d2b1f]/50 hover:text-[#3d2b1f]"
+                      : "text-[#3d2b1f]/50 hover:text-[#3d2b1f] hover:bg-[#3d2b1f]/5"
                   )}
                 >
                   {isActive && (
@@ -115,15 +116,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
                       {item.name}
                     </motion.span>
                   )}
-                </div>
+                </motion.div>
               </Link>
             );
           })}
         </nav>
-      </div>
 
       {/* Main Content Area */}
-      <main className="relative z-10 min-h-screen pb-40">
+      <main className="relative z-10 min-h-screen pb-56">
         <div className="max-w-7xl mx-auto p-4 md:p-8 pt-6 md:pt-12">
           {/* Header branding */}
           <div className="flex items-center justify-between mb-8 px-2">
@@ -155,13 +155,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="popLayout" initial={false}>
             <motion.div
               key={pathname}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.1, ease: "easeOut" }}
+              initial={{ opacity: 0, y: 10, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -10, filter: 'blur(4px)' }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
             >
               {children}
             </motion.div>

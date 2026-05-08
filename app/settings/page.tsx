@@ -8,6 +8,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -15,6 +16,8 @@ export default function SettingsPage() {
   const [logoUrl, setLogoUrl] = useState('');
   const [brandColor, setBrandColor] = useState('#7a2b22');
   const [businessName, setBusinessName] = useState('Insika Kitchen');
+  const [autoEmail, setAutoEmail] = useState(true);
+  const [lowStockThreshold, setLowStockThreshold] = useState(10);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -33,6 +36,8 @@ export default function SettingsPage() {
           setLogoUrl(data.logoUrl || '');
           setBrandColor(data.brandColor || '#7a2b22');
           setBusinessName(data.businessName || 'Insika Kitchen');
+          setAutoEmail(data.autoEmail ?? true);
+          setLowStockThreshold(data.lowStockThreshold || 10);
         }
       } catch (error) {
         console.error('Error fetching settings:', error);
@@ -56,6 +61,8 @@ export default function SettingsPage() {
         logoUrl,
         brandColor,
         businessName,
+        autoEmail,
+        lowStockThreshold: parseInt(lowStockThreshold.toString()),
         updatedAt: new Date(),
       }, { merge: true });
       toast.success('Settings saved successfully!');
@@ -177,6 +184,46 @@ export default function SettingsPage() {
                         placeholder="e.g. 15"
                       />
                     </div>
+                  </div>
+                  
+                  <div>
+                    <label className="mb-2 block text-sm font-black uppercase tracking-widest text-[#7a2b22]/60">Low Stock Threshold</label>
+                    <div className="relative">
+                      <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[#3d2b1f]/40">
+                        <Database size={18} />
+                      </div>
+                      <input 
+                        type="number" 
+                        value={lowStockThreshold}
+                        onChange={(e) => setLowStockThreshold(Number(e.target.value))}
+                        className="w-full rounded-xl border border-[#7a2b22]/10 bg-[#fdfcf0]/30 py-4 pl-12 pr-4 font-bold text-[#3d2b1f] outline-none transition-all focus:border-[#7a2b22]/30 focus:bg-white focus:ring-4 focus:ring-[#7a2b22]/5"
+                        placeholder="e.g. 10"
+                      />
+                    </div>
+                    <p className="mt-2 text-xs text-[#3d2b1f]/40 font-bold">Products with stock at or below this level will be highlighted.</p>
+                  </div>
+
+                  <div>
+                    <label className="mb-4 flex items-center justify-between">
+                      <div>
+                        <span className="block text-sm font-black uppercase tracking-widest text-[#7a2b22]/60">Auto-Email Documents</span>
+                        <span className="text-xs text-[#3d2b1f]/40 font-bold">Automatically email PDF receipts to customers with an email address.</span>
+                      </div>
+                      <button 
+                        onClick={() => setAutoEmail(!autoEmail)}
+                        className={cn(
+                          "relative h-7 w-12 rounded-full transition-colors duration-200 focus:outline-none",
+                          autoEmail ? "bg-green-500" : "bg-gray-200"
+                        )}
+                      >
+                        <div 
+                          className={cn(
+                            "absolute top-1 h-5 w-5 rounded-full bg-white transition-transform duration-200",
+                            autoEmail ? "translate-x-6" : "translate-x-1"
+                          )}
+                        />
+                      </button>
+                    </label>
                   </div>
                   
                   <div className="flex justify-end">

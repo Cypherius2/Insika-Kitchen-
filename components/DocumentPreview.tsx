@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { ChefHat, Download, FileText, X } from 'lucide-react';
+import { ChefHat, Download, FileText, X, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { sendDocumentEmail } from '@/lib/email';
 
 interface DocumentPreviewProps {
   isOpen: boolean;
@@ -63,6 +64,16 @@ export function DocumentPreview({ isOpen, onClose, document: docData }: Document
                 <span className="text-sm font-black uppercase tracking-widest text-[#3d2b1f]/60">Document Preview</span>
               </div>
               <div className="flex items-center gap-2">
+                {customer?.email && (
+                  <button 
+                    onClick={() => sendDocumentEmail(customer.email, documentNumber, type)}
+                    className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest bg-white border-2 transition-all active:scale-95 no-print"
+                    style={{ borderColor: `${brandColor}1A`, color: brandColor }}
+                  >
+                    <Mail size={14} />
+                    Send Email
+                  </button>
+                )}
                 <button 
                   onClick={handlePrint}
                   className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-black uppercase tracking-widest text-white shadow-lg transition-transform active:scale-95 no-print"

@@ -21,7 +21,8 @@ import {
   Package,
   Download,
   ArrowLeft,
-  UserPlus
+  UserPlus,
+  Mail
 } from 'lucide-react';
 import { useProducts, useCustomers, useSettings } from '@/lib/hooks';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, increment } from 'firebase/firestore';
@@ -29,6 +30,7 @@ import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { DocumentPreview } from '@/components/DocumentPreview';
+import { sendDocumentEmail } from '@/lib/email';
 
 interface CartItem {
   id: string;
@@ -146,12 +148,22 @@ export default function POSPage() {
         for (const item of cart) {
           const productRef = doc(db, 'products', item.id);
           await updateDoc(productRef, {
-            stock: increment(-item.quantity)
+            stock: increment(-item.quantity),
+            updatedAt: serverTimestamp()
           });
         }
       }
 
       setLastOrder({ ...orderData, id: docRef.id });
+
+      // Automatically send email if customer has one and auto-email is enabled
+      if (selectedCustomer?.email && settings.autoEmail !== false) {
+        sendDocumentEmail(selectedCustomer.email, documentNumber, type, { 
+          items: cart, 
+          total: total 
+        });
+      }
+
       setCart([]);
       setSelectedCustomer(null);
       setShowSuccessModal(true);
@@ -171,7 +183,7 @@ export default function POSPage() {
 
   return (
     <Shell>
-      <div className="flex flex-col h-[calc(100vh-220px)] md:h-[calc(100vh-240px)] gap-6 lg:flex-row mb-12">
+      <div className="flex flex-col h-[calc(100dvh-280px)] md:h-[calc(100dvh-300px)] gap-6 lg:flex-row mb-16">
         {/* Product Selection Area */}
         <div className="flex flex-col flex-1 gap-6 min-w-0">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2">
@@ -297,7 +309,7 @@ export default function POSPage() {
               </div>
             </div>
 
-            <div className="p-6 pt-0 space-y-3 mt-auto pb-10">
+            <div className="p-6 pt-0 space-y-3 mt-auto pb-20">
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={18} />
@@ -387,6 +399,18 @@ export default function POSPage() {
                   <Download size={20} />
                   Download PDF
                 </button>
+                
+                {lastOrder?.customer?.email && (
+                  <button 
+                    onClick={() => sendDocumentEmail(lastOrder.customer.email, lastOrder.documentNumber, lastOrder.type)}
+                    className="flex w-full items-center justify-center gap-3 rounded-2xl bg-white border-2 py-4 font-black uppercase tracking-widest transition-all active:scale-95"
+                    style={{ borderColor: `${settings.brandColor}1A`, color: settings.brandColor }}
+                  >
+                    <Mail size={20} />
+                    Email to Client
+                  </button>
+                )}
+
                 <button 
                   onClick={() => setShowSuccessModal(false)}
                   className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[#7a2b22]/5 py-4 font-black uppercase tracking-widest transition-all active:scale-95"

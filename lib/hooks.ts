@@ -56,7 +56,9 @@ export function useSettings() {
     vatRate: 15,
     logoUrl: '',
     brandColor: '#7a2b22',
-    businessName: 'Insika Kitchen'
+    businessName: 'Insika Kitchen',
+    autoEmail: true,
+    lowStockThreshold: 10
   });
   const [loading, setLoading] = useState(true);
 
@@ -73,7 +75,9 @@ export function useSettings() {
           vatRate: data.vatRate || 15,
           logoUrl: data.logoUrl || '',
           brandColor: data.brandColor || '#7a2b22',
-          businessName: data.businessName || 'Insika Kitchen'
+          businessName: data.businessName || 'Insika Kitchen',
+          autoEmail: data.autoEmail ?? true,
+          lowStockThreshold: data.lowStockThreshold || 10
         });
       }
       setLoading(false);
