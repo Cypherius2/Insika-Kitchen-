@@ -36,33 +36,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const { settings, loading: settingsLoading } = useSettings();
   const { user, signInWithGoogle, logout } = useAuth();
 
-  if (!user) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-[#fdfcf0] p-4 text-center">
-        <div 
-          className="mb-8 flex h-24 w-24 items-center justify-center rounded-3xl text-white shadow-2xl"
-          style={{ backgroundColor: settings.brandColor }}
-        >
-          <ChefHat size={48} />
-        </div>
-        <h1 className="mb-2 font-serif text-4xl font-black tracking-tight" style={{ color: settings.brandColor }}>
-          {settings.businessName}
-        </h1>
-        <p className="mb-8 max-w-sm font-bold text-[#3d2b1f]/40 uppercase tracking-widest text-xs">
-          Exclusive Management Portal
-        </p>
-        <button
-          onClick={signInWithGoogle}
-          className="flex items-center gap-3 rounded-2xl bg-white px-8 py-4 font-black transition-all hover:scale-105 active:scale-95 shadow-xl border border-[#3d2b1f]/5"
-          style={{ color: settings.brandColor }}
-        >
-          <LogIn size={20} />
-          Sign in with Google
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#fdfcf0] text-[#3d2b1f] selection:bg-[#7a2b22] selection:text-white font-sans overflow-x-hidden">
       {/* Background Decor */}
@@ -145,14 +118,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 {settings.businessName}
               </span>
             </div>
-            <button 
-              onClick={logout}
-              className="group flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest text-[#3d2b1f]/40 border transition-all hover:bg-[#7a2b22] hover:text-white hover:border-[#7a2b22]"
-              style={{ borderColor: `${settings.brandColor}10` }}
-            >
-              <LogOut size={14} className="transition-colors group-hover:text-white" />
-              Sign Out
-            </button>
+            {user ? (
+              <button 
+                onClick={logout}
+                className="group flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest text-[#3d2b1f]/40 border transition-all hover:bg-[#7a2b22] hover:text-white hover:border-[#7a2b22]"
+                style={{ borderColor: `${settings.brandColor}10` }}
+              >
+                <LogOut size={14} className="transition-colors group-hover:text-white" />
+                Sign Out
+              </button>
+            ) : (
+              <button 
+                onClick={signInWithGoogle}
+                className="group flex items-center gap-2 rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest text-white border transition-all hover:opacity-90 active:scale-95"
+                style={{ backgroundColor: settings.brandColor, borderColor: settings.brandColor }}
+              >
+                <LogIn size={14} />
+                Sign In
+              </button>
+            )}
           </div>
 
           <AnimatePresence mode="popLayout" initial={false}>
