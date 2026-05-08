@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { Shell } from '@/components/Shell';
 import { motion } from 'motion/react';
-import { Save, Percent, ShieldCheck, Database, Sliders } from 'lucide-react';
+import { Save, Percent, ShieldCheck, Database, Sliders, Download, FileText } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/contexts/AuthContext';
 import { cn } from '@/lib/utils';
+import { generateDeploymentGuide } from '@/lib/docx-gen';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -267,6 +268,20 @@ export default function SettingsPage() {
                 <p className="text-xs text-blue-600/70">Next.js 15 Standalone Mode</p>
               </div>
             </div>
+
+            <button
+              onClick={generateDeploymentGuide}
+              className="flex w-full items-center gap-4 rounded-xl border border-[#7a2b22]/10 bg-white p-4 transition-all hover:bg-[#fdfcf0]/50 active:scale-[0.98]"
+            >
+              <div className="rounded-lg bg-[#7a2b22]/10 p-2 text-[#7a2b22]">
+                <FileText size={20} />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-bold text-[#3d2b1f]">Download Vercel Guide</p>
+                <p className="text-xs text-[#3d2b1f]/50">Step-by-step instructions for Vercel deployment.</p>
+              </div>
+              <Download size={16} className="ml-auto text-[#7a2b22]/40" />
+            </button>
           </div>
         </div>
       </div>
