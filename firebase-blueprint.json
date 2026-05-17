@@ -1,77 +1,94 @@
 {
   "entities": {
-    "Product": {
+    "products": {
       "title": "Product",
-      "description": "Menu items and inventory products",
+      "description": "Inventory units within the system",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "description": "Display name of the product" },
-        "category": { "type": "string", "description": "Product category" },
-        "price": { "type": "number", "description": "Unit price" },
-        "stock": { "type": "integer", "description": "Current inventory level" },
-        "image": { "type": "string", "format": "uri", "description": "Optional image URL" },
-        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "stock": { "type": "number" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "variants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sku": { "type": "string" },
+              "name": { "type": "string" },
+              "price": { "type": "number" },
+              "stock": { "type": "number" }
+            },
+            "required": ["sku", "name", "price", "stock"]
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "category", "price", "stock"]
+      "required": ["name", "price", "stock", "category"]
     },
-    "Customer": {
+    "users": {
+      "title": "User",
+      "description": "System users and their permissions",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "businessName": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "customers": {
       "title": "Customer",
-      "description": "Client directory and contact info",
+      "description": "Entities interacting with the business OS",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "description": "Full name" },
-        "email": { "type": "string", "format": "email", "description": "Contact email" },
-        "phone": { "type": "string", "description": "Contact phone number" },
-        "address": { "type": "string", "description": "Physical address" },
-        "createdAt": { "type": "string", "format": "date-time", "description": "Registration timestamp" }
-      },
-      "required": ["name"]
-    },
-    "Document": {
-      "title": "Document",
-      "description": "Invoices, Receipts, and Quotations",
-      "type": "object",
-      "properties": {
-        "documentNumber": { "type": "string" },
-        "type": { "type": "string", "enum": ["invoice", "receipt", "quotation"] },
-        "customer": { "type": "object" },
-        "items": { "type": "array" },
-        "subtotal": { "type": "number" },
-        "vat": { "type": "number" },
-        "totalAmount": { "type": "number" },
-        "status": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "sector": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["documentNumber", "type", "totalAmount"]
+      "required": ["name", "email"]
     },
-    "Settings": {
-      "title": "Settings",
-      "description": "Global application configuration",
+    "transactions": {
+      "title": "Transaction",
+      "description": "Financial ledger entries",
       "type": "object",
       "properties": {
-        "businessName": { "type": "string" },
-        "brandColor": { "type": "string" },
-        "vatRate": { "type": "number" },
-        "logoUrl": { "type": "string", "format": "uri" }
-      }
+        "docId": { "type": "string" },
+        "type": { "type": "string", "enum": ["INVOICE", "QUOTATION", "RECEIPT"] },
+        "customerName": { "type": "string" },
+        "total": { "type": "number" },
+        "status": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["docId", "type", "customerName", "total", "status"]
+    },
+    "notifications": {
+      "title": "Notification",
+      "description": "System alerts and notifications",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["INFO", "WARNING", "CRITICAL", "SUCCESS"] },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "type", "read", "createdAt"]
     }
   },
   "firestore": {
-    "products": {
-      "schema": "Product",
-      "description": "Inventory of products"
-    },
-    "customers": {
-      "schema": "Customer",
-      "description": "Customer profiles"
-    },
-    "documents": {
-      "schema": "Document",
-      "description": "Sales documents and activities"
-    },
-    "settings": {
-      "schema": "Settings",
-      "description": "App-wide settings"
-    }
+    "users": { "schema": "users", "description": "System user profiles" },
+    "products": { "schema": "products", "description": "Global inventory list" },
+    "customers": { "schema": "customers", "description": "Customer directory" },
+    "transactions": { "schema": "transactions", "description": "Financial records" },
+    "notifications": { "schema": "notifications", "description": "System alerts and telemetry" }
   }
 }

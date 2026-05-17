@@ -1,24 +1,23 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from 'sonner';
+import { AuthProvider } from "@/lib/contexts/AuthContext";
+import { Toaster } from "sonner";
 
-const inter = Inter({
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  variable: "--font-inter",
 });
 
-const playfair = Playfair_Display({
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
   subsets: ["latin"],
-  variable: "--font-playfair",
 });
 
 export const metadata: Metadata = {
-  title: "Insika Kitchen | Home of Fresh Bakes",
-  description: "Bespoke POS and management system for Insika Kitchen",
+  title: "MiraTech Manage | Professional Business OS",
+  description: "Next-generation POS and Business Management System by MiraTech Industries.",
 };
-
-import { AuthProvider } from '@/lib/contexts/AuthContext';
 
 export default function RootLayout({
   children,
@@ -26,11 +25,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
-      <body className="antialiased">
+    <html lang="en" className="dark">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased selection:bg-[#00a2ff]/30 selection:text-white`}>
         <AuthProvider>
           {children}
-          <Toaster position="top-right" richColors />
+          <Toaster position="top-right" expand={false} richColors />
         </AuthProvider>
       </body>
     </html>
